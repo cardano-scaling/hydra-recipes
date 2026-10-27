@@ -1,0 +1,11 @@
+# A head with a single participant. Paths are relative to this file.
+node-id: "solo"
+listen: "127.0.0.1:5001"
+monitoring-port: 6001
+hydra-signing-key: ../../credentials/hydra.sk
+ledger-protocol-parameters: ../../config/protocol-parameters.json
+chain:
+  cardano-signing-key: ../../credentials/cardano.sk
+  contestation-period: 300
+  deposit-period: 300
+  deposit-activation: 300

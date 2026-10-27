@@ -1,0 +1,18 @@
+# Shared hydra-node configuration. Paths are relative to this file.
+# The network, backend and persistence directory come from the recipe.
+node-id: "alice" # EDIT
+listen: "0.0.0.0:5001"
+advertise: "203.0.113.10:5001" # EDIT: public ip:port your peers connect to
+monitoring-port: 6001
+hydra-signing-key: ../credentials/hydra.sk
+ledger-protocol-parameters: protocol-parameters.json
+peers: []
+# peers: # EDIT: one entry per peer, keys under peers/<name>/
+#   - address: "203.0.113.20:5001"
+#     hydra-verification-key: ../peers/bob/hydra.vk
+#     cardano-verification-key: ../peers/bob/cardano.vk
+chain:
+  cardano-signing-key: ../credentials/cardano.sk
+  contestation-period: 300
+  deposit-period: 300
+  deposit-activation: 300

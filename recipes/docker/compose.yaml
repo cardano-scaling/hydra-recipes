@@ -1,0 +1,107 @@
+name: hydra-recipes
+
+services:
+  mithril:
+    image: ${MITHRIL_IMAGE}
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    entrypoint: ["/bin/sh", "/mithril.sh"]
+    working_dir: /data
+    environment:
+      NETWORK: ${NETWORK:?set in config/env}
+      SKIP_MITHRIL: ${SKIP_MITHRIL:-false}
+    volumes:
+      - ./mithril.sh:/mithril.sh:ro
+      - ../../state/docker/data:/data
+
+  cardano-node:
+    image: ${CARDANO_NODE_IMAGE}
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    depends_on:
+      mithril:
+        condition: service_completed_successfully
+    environment:
+      NETWORK: ${NETWORK:?set in config/env}
+      CARDANO_NODE_SOCKET_PATH: /ipc/node.socket
+    volumes:
+      - ../../state/docker/data:/data
+      - ../../state/docker/ipc:/ipc
+      - ../../state/docker/logs:/logs
+    healthcheck:
+      test: ["CMD-SHELL", "cardano-cli query tip --testnet-magic ${NETWORK_MAGIC:?set in config/env} | jq -e '.syncProgress == \"100.00\"'"]
+      interval: 30s
+      retries: 120
+      start_period: 60s
+    stop_grace_period: 60s
+    restart: unless-stopped
+
+  # Waits until the fuel address has a UTxO; `run.sh distribute` runs the same
+  # script with the distribute command.
+  funding:
+    image: ${CARDANO_NODE_IMAGE}
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    depends_on:
+      cardano-node:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "scripts/funding.sh"]
+    command: ["wait-for-fuel", "--node-socket", "/ipc/node.socket"]
+    working_dir: /work
+    environment:
+      DISTRIBUTE: recipes/docker/run.sh distribute
+    volumes:
+      - ../..:/work:ro
+      - ../../state/docker/ipc:/ipc
+
+  hydra-node:
+    image: ${HYDRA_NODE_IMAGE}
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    depends_on:
+      cardano-node:
+        condition: service_healthy
+      funding:
+        condition: service_completed_successfully
+    command:
+      - --config
+      - /config/hydra-node.yaml
+      - --persistence-dir
+      - /state/persistence
+      - --network
+      - ${NETWORK}
+      - --node-socket
+      - /ipc/node.socket
+      - --testnet-magic
+      - ${NETWORK_MAGIC}
+      - --api-host
+      - 0.0.0.0
+    volumes:
+      - ../../config:/config:ro
+      - ../../credentials:/credentials:ro
+      - ../../peers:/peers:ro
+      - ../../state/docker/persistence:/state/persistence
+      - ../../state/docker/ipc:/ipc
+    ports:
+      - "5001:5001"
+      - "127.0.0.1:4001:4001"
+      - "127.0.0.1:6001:6001"
+    restart: unless-stopped
+
+  hydra-tui:
+    image: ${HYDRA_TUI_IMAGE}
+    platform: linux/amd64
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    profiles: [tui]
+    depends_on:
+      - hydra-node
+    command:
+      - --connect
+      - hydra-node:4001
+      - --node-socket
+      - /ipc/node.socket
+      - --testnet-magic
+      - ${NETWORK_MAGIC}
+      - --funds-signing-key
+      - /credentials/funds.sk
+      - --fuel-key
+      - /credentials/cardano.vk
+    volumes:
+      - ../../credentials:/credentials:ro
+      - ../../state/docker/ipc:/ipc

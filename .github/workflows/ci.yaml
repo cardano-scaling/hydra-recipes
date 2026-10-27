@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  nix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/nix-cachix-setup
+        with:
+          authToken: ${{ secrets.CACHIX_CARDANO_SCALING_AUTH_TOKEN }}
+      - run: nix flake check -L
+      - run: nix build -L .#single-party .#blockfrost .#cardano-node .#existing-node .#gen-keys .#distribute .#test-lifecycle
+      - name: Two-peer lifecycle and restart recovery
+        timeout-minutes: 15
+        run: nix run .#test-lifecycle -- --output-dir state/validation/nix
+      - name: Mixed Nix and Docker lifecycle
+        timeout-minutes: 15
+        run: nix run .#test-lifecycle -- --docker-peer --output-dir state/validation/mixed
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lifecycle-evidence
+          path: state/validation/
+          if-no-files-found: warn
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose --env-file recipes/docker/.env --env-file config/env -f recipes/docker/compose.yaml config --quiet
+      - run: recipes/docker/run.sh keys
+      - name: Funding works with the tools in the Cardano image
+        run: |
+          . recipes/docker/.env
+          docker run --rm --entrypoint /bin/bash \
+            -v "$PWD:/src:ro" -w /src "$CARDANO_NODE_IMAGE" tests/funding.sh
+      - name: Pinned Mithril image supports skipping the bootstrap
+        run: |
+          . recipes/docker/.env
+          docker run --rm --entrypoint /bin/sh \
+            -e SKIP_MITHRIL=true -e NETWORK=preview \
+            -v "$PWD/recipes/docker/mithril.sh:/mithril.sh:ro" "$MITHRIL_IMAGE" /mithril.sh
