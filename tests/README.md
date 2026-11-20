@@ -50,6 +50,6 @@ transactions and no faucet or Blockfrost credentials are required.
 
 A successful devnet run proves the local protocol workflow. It does not establish
 public Preview/Preprod connectivity, Mithril snapshot availability, live
-Blockfrost behavior or ARM/macOS compatibility. Live Blockfrost validation is
+Blockfrost behavior or ARM compatibility. Live Blockfrost validation is
 deferred until a project ID is available. Run a public-network acceptance test
 and retain its evidence before claiming those environments have been validated.

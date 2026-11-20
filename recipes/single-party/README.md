@@ -10,9 +10,8 @@ nix run .#single-party
 ```
 
 Runs `hydra-node` with `hydra-node.yaml` from this folder, then `hydra-tui`
-(select it and press F7). Initialize the head, deposit funds from the TUI, close,
-wait for the contestation period, then fan out. Hydra 2.4 opens an empty head on
-Init; deposits enter the already-open head.
+(select it and press F7). Follow [Using a head](../../README.md#using-a-head)
+to initialize, deposit, transfer, close and fan out.
 
 `wait-for-fuel` runs first and waits while `credentials/cardano.addr` has no
 UTxO. Fund `credentials/funds.addr`, then select `distribute` and press F7 to
