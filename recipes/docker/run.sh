@@ -32,7 +32,7 @@ logs)
   ;;
 cli)
   shift
-  compose exec cardano-node cardano-cli "$@"
+  compose exec -T cardano-node cardano-cli "$@"
   ;;
 down) compose down ;;
 *)

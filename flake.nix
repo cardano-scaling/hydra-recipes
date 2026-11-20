@@ -26,6 +26,7 @@
         ./nix/gen-keys.nix
         ./nix/lib.nix
         ./nix/pkgs.nix
+        ./nix/status.nix
         ./nix/treefmt.nix
         ./recipes/single-party
         ./recipes/blockfrost
