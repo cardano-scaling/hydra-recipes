@@ -17,7 +17,7 @@ jobs:
         with:
           authToken: ${{ secrets.CACHIX_CARDANO_SCALING_AUTH_TOKEN }}
       - run: nix flake check -L
-      - run: nix build -L .#single-party .#blockfrost .#cardano-node .#existing-node .#gen-keys .#distribute .#test-lifecycle
+      - run: nix build -L .#single-party .#blockfrost .#cardano-node .#existing-node .#gen-keys .#distribute .#status .#test-lifecycle
       - name: Two-peer lifecycle and restart recovery
         timeout-minutes: 15
         run: nix run .#test-lifecycle -- --output-dir state/validation/nix

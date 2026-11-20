@@ -97,6 +97,8 @@ See [tests/README.md](tests/README.md) for coverage and evidence limits.
 
 ## Troubleshooting
 
+- `just status` shows sync, head state, balances and pending deposits;
+  `just --show status` shows usage and options.
 - `curl -s localhost:4001/config | jq` shows the effective configuration with resolved paths.
 - `curl -s localhost:6001/metrics` shows connected peers and the head state.
 - `PostTxOnChainFailed` with `NoSeedInput` on `Init`: the fuel address has no
