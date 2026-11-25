@@ -58,6 +58,41 @@ starting `hydra-node` and waits, printing both addresses, while it is empty.
 Run distribute again when fuel runs low: it always splits what is at the funds
 address evenly, using its ada-only UTxOs.
 
+## Using a head
+
+Start your chosen recipe using the command in [Recipes](#recipes). For Nix
+recipes, once Hydra is synced and has fuel, select `hydra-tui` in
+process-compose and press **F7** to open it. If the recipe is running in the
+background, attach first; see the [background commands](recipes/cardano-node/README.md#background-operation).
+For Docker, run `recipes/docker/run.sh tui` from the repository root.
+
+In the TUI:
+
+1. Initialize and wait for `HeadIsOpen`. Hydra 2.4 opens an empty head;
+   deposit funds from the TUI to add them.
+2. Wait for `CommitFinalized` before transferring. `CommitRecorded` means the
+   deposit was observed on layer 1, but its funds are not yet spendable in the
+   head. The example configuration has a 300-second activation delay, plus
+   transaction confirmation and settlement time. Keep the node running and
+   synced; the deposit deadline is not an estimated completion time.
+3. Make transfers and check that they appear in confirmed snapshots. Before
+   closing, save the final outputs with
+   `curl -fsS localhost:4001/snapshot/utxo > state/final-head-utxo.json`.
+4. Close and wait for `HeadIsClosed`, then `ReadyToFanout`. The configured
+   contestation period is 300 seconds; follow the reported deadline and
+   readiness event rather than a wall-clock timer. Check that the closed
+   snapshot number matches the last confirmed snapshot.
+5. Fan out and wait for `HeadIsFinalized`. Query layer 1 to check that the
+   returned output addresses and values match the final snapshot. Fanout
+   creates new transaction IDs; `finalizedUTxO` in the finalization event gives
+   the actual layer 1 output IDs. The [cardano-node guide](recipes/cardano-node/README.md#verify-returned-funds)
+   includes example queries.
+
+Layer 1 fees come from the fuel wallet. For self-transfers, all deposited ada
+should return to the funds address; after payments to other addresses, check
+each recipient instead. Stopping the recipe does not close the head or return
+deposited funds. Keep credentials and persistence when resuming a head.
+
 ## Configuration
 
 - `config/hydra-node.yaml`: used by `blockfrost`, `cardano-node`, `existing-node`
@@ -94,6 +129,7 @@ On Linux with Docker, `nix run .#test-lifecycle -- --docker-peer` runs one
 `existing-node` participant and one participant from the Docker recipe. CI runs
 both variants. Neither uses your credentials, a faucet or a Blockfrost token.
 See [tests/README.md](tests/README.md) for coverage and evidence limits.
+See the [validation record](tests/VALIDATION.md) for completed runs.
 
 ## Troubleshooting
 
