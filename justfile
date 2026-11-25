@@ -76,9 +76,21 @@ metrics:
 check:
   nix flake check -L
 
+[doc('''
+Live sync, head state, funds/fuel balances and pending deposit IDs (read-only).
+Usage: just status [RECIPE] [--api-url URL] [--timeout SECONDS]
+Defaults: cardano-node, http://127.0.0.1:4001, 5 seconds per request.
+Recipes: cardano-node, existing-node, blockfrost, single-party, docker.
+existing-node needs CARDANO_NODE_SOCKET_PATH; Blockfrost recipes need credentials/blockfrost-project.txt.
+Requires Nix, including for Docker. Exits nonzero on unavailable data, sync lag or empty fuel.
+''')]
+[positional-arguments]
+status RECIPE="cardano-node" *ARGS:
+  @nix run .#status -- "$@"
+
 # build every recipe, as CI does
 build:
-  nix build -L .#single-party .#blockfrost .#cardano-node .#existing-node .#gen-keys .#distribute .#test-lifecycle
+  nix build -L .#single-party .#blockfrost .#cardano-node .#existing-node .#gen-keys .#distribute .#status .#test-lifecycle
 
 # two real Hydra peers on a disposable Cardano devnet; pass --docker-peer on Linux to mix recipes
 test-lifecycle *ARGS:

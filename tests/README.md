@@ -1,5 +1,20 @@
 # Validation
 
+## Runtime status regression tests
+
+`nix flake check` runs `tests/status.sh` against fixture API and layer 1
+responses. These tests cover unavailable services, sync lag, empty versus
+unknown balances, malformed responses, pending deposits, request timeouts,
+Blockfrost pagination and authentication errors, and existing-node/Docker
+socket selection. They also check literal Just argument forwarding, Hydra
+configuration mismatches, terminal control characters, noninteractive Docker
+queries and a real process that ignores SIGTERM. They do not submit transactions
+or require live services.
+
+Balance cases include totals above 2^53 lovelace and rejection of integer
+overflow. WebSocket requests disable both event history and unused snapshot
+UTxO payloads.
+
 ## Funding regression tests
 
 `nix flake check` runs `funding.sh` against fixture node and Blockfrost responses

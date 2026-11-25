@@ -3,11 +3,19 @@
     let
       source = lib.fileset.toSource {
         root = ../.;
-        fileset = lib.fileset.unions [ ../config ../recipes ../scripts ../tests ];
+        fileset = lib.fileset.unions [ ../config ../recipes ../scripts ../tests ../justfile ];
       };
       python = pkgs.python3.withPackages (p: [ p.pyyaml p.websocket-client ]);
     in
     {
+      checks.status = pkgs.runCommand "status-tests"
+        {
+          nativeBuildInputs = [ pkgs.bash pkgs.coreutils pkgs.jq pkgs.just ];
+        } ''
+        bash ${source}/tests/status.sh
+        touch $out
+      '';
+
       checks.funding = pkgs.runCommand "funding-tests"
         {
           nativeBuildInputs = [ pkgs.bash pkgs.coreutils pkgs.jq ];
